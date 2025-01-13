@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, GroupAction, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, GroupAction, DeclareLaunchArgument, SetLaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch.conditions import IfCondition
@@ -8,9 +8,32 @@ from launch_ros.actions import Node
 
 
 ARGS = [
-    DeclareLaunchArgument('headless', default_value='false', description='Whether to launch gazebo in headless mode'),
-    DeclareLaunchArgument('sensing', default_value='false', description='Whether to launch sensing nodes'),  
-    DeclareLaunchArgument('localization', default_value='false', description='Whether to launch localization nodes'),
+    DeclareLaunchArgument('headless', default_value='false', 
+            description='Whether to launch gazebo in headless mode'),
+    DeclareLaunchArgument('sensing', default_value='false', 
+            description='Whether to launch sensing nodes'),  
+    DeclareLaunchArgument('localization', default_value='false', 
+            description='Whether to launch localization nodes'),
+    
+    
+    SetLaunchConfiguration('use_sim_time', 'true'),
+    SetLaunchConfiguration('dual_ekf_navsat_param_path', PathJoinSubstitution([
+        FindPackageShare('mowbot_launch'),
+        'config', 'localization', 'mowbot_robot_localization',
+        'dual_ekf_navsat.param.yaml'
+    ])),
+    SetLaunchConfiguration('gnss_fuser_param_path', PathJoinSubstitution([
+        FindPackageShare('mowbot_launch'),
+        'config', 'sensing',
+        'gnss_fuser.param.yaml'
+    ])),
+    SetLaunchConfiguration('imu_filter_madgwick_param_path', PathJoinSubstitution([
+        FindPackageShare('mowbot_launch'),
+        'config', 'sensing',
+        'imu_filter_madgwick.param.yaml'
+    ])),
+        
+        
 ]
 
 def generate_launch_description():
@@ -99,7 +122,7 @@ def generate_launch_description():
             }.items(),
             condition=IfCondition(LaunchConfiguration('sensing'))
         ),
-        
+
         # Localization
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(

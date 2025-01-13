@@ -11,6 +11,8 @@ find_package(ament_cmake REQUIRED)
 INSTALL(DIRECTORY
   launch
   config
+  mapviz
+  rviz
   DESTINATION share/${PROJECT_NAME}
 )
 
