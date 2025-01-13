@@ -1,14 +1,21 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, GroupAction
+from launch.actions import IncludeLaunchDescription, GroupAction, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 
+ARGS = [
+    DeclareLaunchArgument('headless', default_value='false', description='Whether to launch gazebo in headless mode'),
+    DeclareLaunchArgument('sensing', default_value='false', description='Whether to launch sensing nodes'),  
+    DeclareLaunchArgument('localization', default_value='false', description='Whether to launch localization nodes'),
+]
+
 def generate_launch_description():
     
-    return LaunchDescription([
+    return LaunchDescription(ARGS + [
         
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -19,6 +26,7 @@ def generate_launch_description():
                 ])
             ),
             launch_arguments={
+                'headless': LaunchConfiguration('headless'),
                 'world_path': PathJoinSubstitution([
                     FindPackageShare('mowbot_simulator_launch'),
                     'worlds',
@@ -40,7 +48,7 @@ def generate_launch_description():
                 executable='twist_mux',
                 output='screen',
                 remappings={
-                    ('/cmd_vel_out', '/mowbot_velocity_controller/cmd_vel_unstamped')
+                    ('/cmd_vel_out', '/mowbot_base/cmd_vel_unstamped')
                 },
                 parameters=[
                     PathJoinSubstitution(
@@ -76,5 +84,33 @@ def generate_launch_description():
                     ('/cmd_vel', '/joy_cmd_vel')
                 ]
             ),
-        ])
+        ]),
+        
+        # Sensing
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution([
+                    FindPackageShare('mowbot_sensing_launch'),
+                    'launch',
+                    'sensing_gazebo.launch.py'
+                ])
+            ),
+            launch_arguments={
+            }.items(),
+            condition=IfCondition(LaunchConfiguration('sensing'))
+        ),
+        
+        # Localization
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution([
+                    FindPackageShare('mowbot_localization_launch'),
+                    'launch',
+                    'localization_gazebo.launch.py'
+                ])
+            ),
+            launch_arguments={
+            }.items(),
+            condition=IfCondition(LaunchConfiguration('localization'))
+        ),
     ])
